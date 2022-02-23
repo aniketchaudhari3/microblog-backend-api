@@ -1,0 +1,496 @@
+openapi: 3.0.0
+info:
+  title: Microblog API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local Server
+paths:
+  # public endpoints: no auth required
+  /public/profile/{username}:
+    get:
+      tags: ["public"]
+      summary: Get profile details of a user by username
+      security: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: username
+          schema:
+            type: string
+
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/publicUserProfile"
+        400:
+          description: username missing
+        404:
+          description: user not found
+
+  /public/post/view/{id}:
+    get:
+      tags: ["public"]
+      summary: Get post details
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: post id
+          schema:
+            type: string
+
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/publicPost"
+        400:
+          description: post id missing
+        404:
+          description: post not found
+          
+  /public/post/all/{username}:
+    get:
+      tags: ["public"]
+      security: []
+      summary: Get all posts by a user sorted chronologically
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: username
+          schema:
+            type: string
+
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    _id: 
+                      type: string
+                    post_caption: 
+                      type: string
+                      example: Hello! this is a post
+                    createdAt: 
+                      type: string
+                      format: date-time
+                      example: '2022-02-16T15:32:36.984Z'
+                    updatedAt: 
+                      type: string
+                      format: date-time
+                      example: '2022-02-16T15:32:36.984Z'
+                    likes:
+                      type: number
+                      example: 341
+        400:
+          description: username missing
+        404:
+          description: user not found
+
+  # global feed
+  /feed:
+    get:
+      tags: ['feed']
+      summary: Global posts feed
+
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  allOf:
+                    - $ref: '#/components/schemas/publicPost'
+                    - type: object
+                      properties:
+                        likes: 
+                          type: number
+                          example: 123
+    
+  # user 
+  /user/profile:
+    get:
+      tags: ['user']
+      summary: Get user profile details
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref:  '#/components/schemas/publicUserProfile'
+                  - type: object
+                    properties:
+                      email:
+                        type: string
+                        example: aniket@gmail.com
+                    
+    put:
+      tags: ['user']
+      summary: Update user profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                  example: Aniket
+                lastname:
+                  type: string
+                  example: Chaudhari
+      responses:
+        200:
+          description: succesful operation
+    
+  /follow/{id}:
+    post:
+      tags: ['user']
+      summary: Follow a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: user id to follow
+          schema:
+            type: string
+      responses:
+        200:
+          description: user followed succesfully
+        400:
+          description: cannot follow self or user is already followed
+        404:
+          description: user not found
+  
+  /unfollow/{id}:
+    post:
+      tags: ['user']
+      summary: Unfollow an already following user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: user id to unfollow
+          schema:
+            type: string
+      responses:
+        200:
+          description: user unfollowed succesfully
+        400:
+          description: cannot unfollow self or user is not already not followed
+        404:
+          description: user not found
+      
+  /user/followers:
+    get:
+      tags: ['user']
+      summary: Get a list of followers
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    _id: 
+                      type: string
+                      example: 620cb4b4e0a9e98dee0f012e
+                    username:
+                      type: string
+                      example: aniket_333
+                    firstname:
+                      type: string
+                      example: Aniket
+                    lastname:
+                      type: string
+                      example: Chaudhari
+                    
+  /user/following:
+    get:
+      tags: ['user']
+      summary: Get user following
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    _id: 
+                      type: string
+                      example: 620cb4b4e0a9e98dee0f012e
+                    username:
+                      type: string
+                      example: aniket_333
+                    firstname:
+                      type: string
+                      example: Aniket
+                    lastname:
+                      type: string
+                      example: Chaudhari            
+  
+  #post
+  /post/create:
+    post:
+      tags: ['post']
+      summary: Create a post
+      requestBody:
+        content: 
+          application/json:
+            schema:
+              type: object
+              properties:
+                post_caption:
+                  type: string
+                  maxLength: 280
+      responses:
+        200:
+          description: Post created successfully
+        400:
+          description: post_caption is missing
+
+  /post/all:
+    get:
+      tags: ['post']
+      summary: Get all posts for the logged in user
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    _id:
+                      type: string
+                      format: uid
+                      example: 620cb4b4e0a9e98dee0f012e
+                    post_caption:
+                      type: string
+                      example: Hey! this is my first post
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: '2022-02-16T16:19:48.890Z'
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      example: '2022-02-16T16:19:48.890Z'
+                    likes:
+                      type: number
+                      example: 200
+                      
+  /post/{id}:
+    # update a post
+    put:
+      tags: ['post']
+      summary: Update a post by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: post id
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                post_caption:
+                  type: string
+                  example: this is the updated post content
+      responses:
+        200: 
+          description: post updated successfully
+        404: 
+          description: post not found
+        401:
+          description: unauthorized
+        400:
+          description: post caption is missing
+
+    # delete a post
+    delete:
+      tags: ['post']
+      summary: Delete a post by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: post id
+          schema:
+            type: string
+      responses:
+        200: 
+          description: post deleted successfully
+        404: 
+          description: post not found
+        401:
+          description: unauthorized
+        400:
+          description: post caption is missing
+          
+  /post/like/{id}:
+    post:
+      tags: ['post']
+      summary: Like a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: post id
+          schema:
+            type: string
+      responses:
+        200:  
+          description: post liked succesfully
+        400: 
+          description: post id is missing or post is already liked
+        404:
+          description: post not found
+      
+  /post/unlike/{id}:
+    post:
+      tags: ['post']
+      summary: Unlike a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: post id
+          schema:
+            type: string
+      responses:
+        200:  
+          description: post unliked succesfully
+        400: 
+          description: post id is missing OR cannot unlike a post that is not already liked
+        404:
+          description: post not found
+          
+  /post/likes/{id}:
+    post:
+      tags: ['post']
+      summary: Get a list of users who liked a post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: post id
+          schema:
+            type: string
+      responses:
+        200:
+          description: succesful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  properties:
+                    _id:
+                      type: string
+                      example: 620cb4b4e0a9e98dee0f012e
+                    username:
+                      type: string
+                      example: aniket_333
+                    firstname:
+                      type: string
+                      example: Aniket
+                    lastname:
+                      type: string
+                      example: Chaudhari
+                  
+              
+          
+#components
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    publicUserProfile:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 620cb4b4e0a9e98dee0f012e
+        username:
+          type: string
+          example: aniket_333
+        firstname:
+          type: string
+          example: Aniket
+        lastname:
+          type: string
+          example: Chaudhari
+        followers:
+          type: number
+          example: 2344
+        following:
+          type: number
+          example: 4234
+
+    publicPost:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 620cb4b4e0a9e98dee0f012e
+        post_caption:
+          type: string
+          example: Hey! this is my first post
+        createdAt:
+          type: string
+          format: date-time
+          example: '2022-02-16T16:19:48.890Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2022-02-16T16:19:48.890Z'
+        likes: 
+          type: number
+          example: 233
+        author:
+          type: object
+          properties:
+            username:
+              type: string
+              example: aniket_333
+            firstname:
+              type: string
+              example: Aniket
+            lastname:
+              type: string
+              example: Chaudhari
+
+security:
+  - bearerAuth: []

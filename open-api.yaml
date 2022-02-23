@@ -105,7 +105,14 @@ paths:
     get:
       tags: ['feed']
       summary: Global posts feed
-
+      parameters:
+        - name: page
+          in: query
+          required: true
+          schema:
+            type: number
+            default: 1
+            description: Page number
       responses:
         200:
           description: successful operation

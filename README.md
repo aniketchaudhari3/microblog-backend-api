@@ -1,5 +1,5 @@
 # Microblog API
-Backend API for a simple microblogging website
+Backend API for a simple microbloging website
 
 ## Libraries used
 
